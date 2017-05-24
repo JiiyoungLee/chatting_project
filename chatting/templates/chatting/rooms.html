@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html>
+<head>
+</head>
+<body>
+	{% extends "chatting/base.html" %}
+
+	{% block content %}
+	{{ request.session.user }}
+		{% for room in object_list %}
+			<p>
+			{{ room.name }}
+			{{ room.creator}}
+			{{ room.created_time }}
+			
+			<span id="span_count{{ room.id }}">{{ room.member_count }}</span>
+			<form method="GET" action="{% url 'chatting:chatting' room.id %}">
+				<input type="submit" id="btn_enter{{ room.id }}" value="ENTER">
+			</form>
+			<script>
+			var i = 0;
+			var spanCount = document.getElementById("span_count{{ room.id }}");
+			var btnEnter = document.getElementById("btn_enter{{ room.id }}");
+			{% for member in room.member.all %}
+				i++;
+			{% endfor %}
+
+			spanCount.innerHTML = (i+ '/' + spanCount.innerHTML);
+
+			var countArr = spanCount.innerHTML.split('/');
+			if (countArr[0] >= countArr[1]) {
+				btnEnter.setAttribute("disabled", "");
+			}
+
+			</script>
+			
+			</p>
+		{% endfor %}
+		{{ form.as_p }}
+		<form method="GET" action="{% url 'chatting:make_room' %}">
+			<input type="submit" value="Make A Chatting Room">
+		</form>
+		<script>
+			var ws_path = "ws://" + window.location.host + "/chatting/?room=1";
+
+			socket = new WebSocket(ws_path);
+
+			socket.onopen = function() {
+				console.log("OPEN");
+			}
+			socket.onclose = function() {
+				console.log("CLOSE");
+			}
+			socket.onmessage = function() {
+				console.log("MESSAGE");
+			}
+		</script>
+
+	{% endblock %}
+
+	
+</body>
+</html>

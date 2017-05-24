@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html>
+<head>
+</head>
+<body>
+	{% extends "chatting/base.html" %}
+
+	{% block content %}
+	<form method="POST" action="{% url 'chatting:signin' %}">
+		{% csrf_token %}
+		{{ form.as_p }}
+		<input type="submit"  value="Sign In">
+	</form>
+	{% endblock %}
+		
+</body>
+</html>

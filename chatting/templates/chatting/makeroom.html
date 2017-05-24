@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+<head>
+</head>
+<body>
+	{% extends "chatting/base.html" %}
+
+	{% block content %}
+		<form method="POST" action="{% url 'chatting:make_room' %}">
+			{% csrf_token %}
+			{{ form.as_p }}
+			<input type="hidden" name='creator' value='{{ request.session.user }}'>
+			<input type="submit" value="Make">
+		</form>
+		<script>
+			window.onload = function() {
+				var creator = document.getElementById('id_creator');
+				creator.value = '{{ request.session.user }}';
+				creator.setAttribute("disabled", "");
+			};
+		</script>
+	{% endblock %}
+
+	
+</body>
+</html>

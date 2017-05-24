@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html>
+<head>
+</head>
+<body>
+	{% extends "chatting/base.html" %}
+
+	{% block content %}
+		<form method="GET" action="{% url 'chatting:exit_room' room %}">
+			<input type="submit" value="EXIT" id="btn_exit">
+		</form>
+		{% for chatting_message in chatting_messages%}
+			{{ chatting_message }}
+			{{ chatting_message.created_time }}
+		{% endfor %}
+		<div id = "div_test">
+		</div>
+		{{form.as_p}}
+		<button id="btn_chat">CHAT</button>
+		<script>
+		console.log('{{ request.path }}');
+		var path = '{{request.path}}';
+		var pathArr = path.split('/');
+		console.log(pathArr);
+		window.onload = function() {
+			var sender = document.getElementById('id_sender');
+			sender.value = '{{ request.session.user }}';
+			sender.setAttribute("disabled", "");
+		};
+		var context = document.getElementById('id_context');
+		var chatButton = document.getElementById('btn_chat');
+		var exitButton = document.getElementById('btn_exit');
+		var div = document.getElementById("div_test");
+		var ws_scheme = window.location.protocol == "https:" ? "wss" : "ws";
+		var ws_path = ws_scheme + "://" + window.location.host + "/chatting/?room=" + pathArr[pathArr.length - 1];
+
+		var socket = new WebSocket(ws_path);
+
+		socket.onmessage = function(message) {
+			var inputMessage = JSON.parse(message.data);
+			
+			div.innerHTML += inputMessage.sender + ": " + inputMessage.text + "<br>";
+		};
+
+		socket.onopen = function() {
+			socket.send('{"text": "<strong>{{ request.session.user }} enters.</strong>" , "sender": "<strong>SYSTEM</strong>"}');
+		}
+
+		socket.onclose = function() {
+			socket.send('{"text": "<strong>{{ request.session.user }} exits.</strong>" , "sender": "<strong>SYSTEM</strong>"}');
+		}
+
+		chatButton.onclick = function() {
+				console.log(document.getElementById('id_context').value);
+				var data = document.getElementById('id_context').value
+				socket.send('{"text": "' + context.value +'" , "sender": "{{ request.session.user }}"}');
+				context.value = "";
+		}
+
+		exitButton.onclick = function() {
+			socket.onclose();
+		}
+
+
+		if (socket.readyState == WebSocket.OPEN) {
+			socket.onopen();
+		}
+
+		window.onbeforeunload = function() {
+			exitButton.onclick();
+			socket.onclose();
+		}
+
+		</script>
+	{% endblock %}
+	
+</body>
+</html>

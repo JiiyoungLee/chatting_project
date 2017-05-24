@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html>
+<head>
+</head>
+<body>
+	{% extends "chatting/base.html" %}
+
+	{% block content %}
+	<form method="POST" action="{% url 'chatting:login' %}">
+		{% csrf_token %}
+		{{ form.as_p }}
+		<input type="submit"  value="Login">
+	</form>
+	<form method="GET" action="{%url 'chatting:signin' %}">
+		<input type="submit" value="SIGN IN">
+	</form>
+	{% endblock %}
+		
+</body>
+</html>
