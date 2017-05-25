@@ -6,13 +6,10 @@
 	{% extends "chatting/base.html" %}
 
 	{% block content %}
-		<form method="GET" action="{% url 'chatting:exit_room' room %}">
+		<!--form method="GET" action="{% url 'chatting:exit_room' room %}">
 			<input type="submit" value="EXIT" id="btn_exit">
-		</form>
-		{% for chatting_message in chatting_messages%}
-			{{ chatting_message }}
-			{{ chatting_message.created_time }}
-		{% endfor %}
+		</form-->
+		<button id="btn_exit">EXIT</button>
 		<div id = "div_test">
 		</div>
 		{{form.as_p}}
@@ -35,30 +32,37 @@
 		var ws_path = ws_scheme + "://" + window.location.host + "/chatting/?room=" + pathArr[pathArr.length - 1];
 
 		var socket = new WebSocket(ws_path);
+		var socket2 = new WebSocket("ws://" + window.location.host + "/test/");
 
 		socket.onmessage = function(message) {
 			var inputMessage = JSON.parse(message.data);
+			//if (inputMessage.sender) {
+				div.innerHTML += inputMessage.sender + ": " + inputMessage.msg + "<br>";
+			//} else {
+				//div.innerHTML += inputMessage.sender+"<br>";
+			//}
 			
-			div.innerHTML += inputMessage.sender + ": " + inputMessage.text + "<br>";
 		};
 
 		socket.onopen = function() {
-			socket.send('{"text": "<strong>{{ request.session.user }} enters.</strong>" , "sender": "<strong>SYSTEM</strong>"}');
+			socket.send('{"msg": "<strong>{{ request.session.user }} enters.</strong>" , "sender": "<strong>SYSTEM</strong>"}');
 		}
 
-		socket.onclose = function() {
-			socket.send('{"text": "<strong>{{ request.session.user }} exits.</strong>" , "sender": "<strong>SYSTEM</strong>"}');
+		socket2.onopen = function() {
+			//socket2.send('{"room": "' + pathArr[pathArr.length - 1] + '", "user": "{{ request.session.user }}", "from" : "room"}');
 		}
+
 
 		chatButton.onclick = function() {
 				console.log(document.getElementById('id_context').value);
 				var data = document.getElementById('id_context').value
-				socket.send('{"text": "' + context.value +'" , "sender": "{{ request.session.user }}"}');
+				socket.send('{"msg": "' + context.value +'" , "sender": "{{ request.session.user }}"}');
 				context.value = "";
 		}
 
 		exitButton.onclick = function() {
-			socket.onclose();
+			
+			window.history.back();
 		}
 
 
@@ -66,10 +70,12 @@
 			socket.onopen();
 		}
 
-		window.onbeforeunload = function() {
-			exitButton.onclick();
-			socket.onclose();
-		}
+	
+
+		//window.history.back() = function() {// it occurs both exit button is clicked and back button is clicked.
+			//exitButton.onclick();
+		//}
+		
 
 		</script>
 	{% endblock %}

@@ -13,11 +13,11 @@
 			{{ room.creator}}
 			{{ room.created_time }}
 			
-			<span id="span_count{{ room.id }}">{{ room.member_count }}</span>
+			<span id="span_count{{ room.id }}"></span>/{{ room.member_count }}
 			<form method="GET" action="{% url 'chatting:chatting' room.id %}">
 				<input type="submit" id="btn_enter{{ room.id }}" value="ENTER">
 			</form>
-			<script>
+			<!--script>
 			var i = 0;
 			var spanCount = document.getElementById("span_count{{ room.id }}");
 			var btnEnter = document.getElementById("btn_enter{{ room.id }}");
@@ -32,7 +32,7 @@
 				btnEnter.setAttribute("disabled", "");
 			}
 
-			</script>
+			</script-->
 			
 			</p>
 		{% endfor %}
@@ -41,18 +41,32 @@
 			<input type="submit" value="Make A Chatting Room">
 		</form>
 		<script>
-			var ws_path = "ws://" + window.location.host + "/chatting/?room=1";
+			
+			var ws_path = "ws://" + window.location.host + "/list/";
 
 			socket = new WebSocket(ws_path);
 
 			socket.onopen = function() {
 				console.log("OPEN");
 			}
-			socket.onclose = function() {
-				console.log("CLOSE");
-			}
-			socket.onmessage = function() {
-				console.log("MESSAGE");
+			
+			socket.onmessage = function(message) {
+				//var input = JSON.parse(message.data);
+				//console.log(input);
+				/*console.log(input['user'], input['room'] );
+				if (input['from'] == "room") {
+					alert(input['room']+":"+input['user']);
+				}*/
+				/*if (message.data[0] == '*') {
+					alert("!!!");
+				}*/
+				console.log(message.data);
+				
+				let spanCount = document.getElementById("span_count"+ message.data[1]);
+				
+				spanCount.innerHTML = message.data[6];
+				
+				
 			}
 		</script>
 

@@ -18,12 +18,9 @@ def index(request):
 	return render(request, 'chatting/index.html', context)
 
 def login_view(request):
-	print(request.POST)
 	username = request.POST['username']
 	password = request.POST['password']
-	print(username, password)
 	user = authenticate(username=username, password=password)
-	print(user)
 	if user is not None:
 		print("login!")
 		login(request, user)
@@ -45,7 +42,7 @@ class SignInView(View):
 		User.objects.create_user(username=request.POST['username'], password=request.POST['password'])
 		return HttpResponseRedirect(reverse('chatting:index'))
 
-
+"""
 class RoomListView(ListView):
 	template_name = 'chatting/rooms.html'
 	model = ChattingRoom
@@ -53,14 +50,19 @@ class RoomListView(ListView):
 	def get_context_data(self, **kwargs):
 		context = super(RoomListView, self).get_context_data(**kwargs)
 		
-		print(self.request.session)
-		print(self.request.user)
-		print(self.request.user.id)
 		this_user = User.objects.get(id=self.request.user.id)
 		self.request.session['user'] = this_user.username
 		
 		#context['form'] = form
 		return context
+"""
+class RoomListView(View):
+	template_name = 'chatting/rooms_test.html'
+
+	def get(self, request):
+		this_user = User.objects.get(id=request.user.id)
+		request.session['user'] = this_user.username
+		return render(request, self.template_name)
 
 class MakeRoomView(View):
 	template_name = 'chatting/makeroom.html'
@@ -72,11 +74,8 @@ class MakeRoomView(View):
 		return render(request, self.template_name, context)
 
 	def post(self, request):
-		print(request)
-		print(request.POST)
 		form = MakeRoomForm(request.POST)
 		new_instance = form.save()
-		print(new_instance)
 		return HttpResponseRedirect(reverse('chatting:chatting', args=[new_instance.id]))
 
 class ChattingView(View):
@@ -93,9 +92,10 @@ class ChattingView(View):
 		return render(request, self.template_name, context)
 
 class ExitRoomView(View):
-	tempalte_name = 'chatting/rooms.html'
+	template_name = 'chatting/rooms.html'
 
 	def get(self, request, *args, **kwargs):
+		print("EXIT")
 		room_id = kwargs['room_id']
 		this_room = ChattingRoom.objects.get(id=room_id)
 		this_room.member.remove(request.user)
