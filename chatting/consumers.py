@@ -68,6 +68,7 @@ def room_connect(message):
 @channel_session_user
 def room_disconnect(message):
 	print("room_disconnect")
+	Group("room").discard(message.reply_channel)
 	"""Group("room").send({
 		"text": '{"user": "'+ message.user.username +'", "room": "disconnects", "from": "room"}',
 	})"""
@@ -103,4 +104,5 @@ def room_list_connect(message):
 
 def room_list_disconnect(message):
 	print("room_list_disconnect")
+	Group("room").discard(message.reply_channel)
 	

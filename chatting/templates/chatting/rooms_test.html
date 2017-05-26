@@ -28,6 +28,7 @@
 				console.log("OPEN");
 			}
 			
+			console.log(window.location.host);
 			socket.onmessage = function(message) {
 				var p_list = document.getElementById("chatting_room_list");
 				var newOne = p_list.cloneNode(true);
@@ -39,112 +40,108 @@
 				if (!find_room) {
 					console.log("NO");
 					for (var attribute in room) {
-					var spanName = document.getElementsByName("chattingroom_name")[0];
-					var spanCreator = document.getElementsByName("chattingroom_creator")[0];
-					var spanCreatedTime = document.getElementsByName("chattingroom_created_time")[0];
-					var spanCount = document.getElementsByName("chattingroom_count")[0];
-					var spanMembers = document.getElementsByName("chattingroom_members")[0];
-					var spanButton = document.getElementsByName("chattingroom_button")[0];
-					console.log(attribute, room[attribute]);
-					if (attribute == 'name') {
-						//let nameField = document.createElement("span");
-						spanName.setAttribute("id", attribute+room['id']);
-						spanName.setAttribute("name", attribute+room['id']);
-						spanName.innerHTML = room[attribute] + " ";
+						var spanName = document.getElementsByName("chattingroom_name")[0];
+						var spanCreator = document.getElementsByName("chattingroom_creator")[0];
+						var spanCreatedTime = document.getElementsByName("chattingroom_created_time")[0];
+						var spanCount = document.getElementsByName("chattingroom_count")[0];
+						var spanMembers = document.getElementsByName("chattingroom_members")[0];
+						var spanButton = document.getElementsByName("chattingroom_button")[0];
+						
+						if (attribute == 'name') {
+							//let nameField = document.createElement("span");
+							spanName.setAttribute("id", attribute+room['id']);
+							spanName.setAttribute("name", attribute+room['id']);
+							spanName.innerHTML = room[attribute] + " ";
 
-						//p_list.append(nameField);
-					} else if (attribute == 'creator') {
-						//let creatorField = document.createElement("span");
-						//creatorField.setAttribute("id", attribute+room['id']);
-						spanCreator.setAttribute("id", attribute+room['id']);
-						spanCreator.setAttribute("name", attribute+room['id']);
-						spanCreator.innerHTML = room[attribute] + " ";
+							//p_list.append(nameField);
+						} else if (attribute == 'creator') {
+							//let creatorField = document.createElement("span");
+							//creatorField.setAttribute("id", attribute+room['id']);
+							spanCreator.setAttribute("id", attribute+room['id']);
+							spanCreator.setAttribute("name", attribute+room['id']);
+							spanCreator.innerHTML = room[attribute] + " ";
 
-						//p_list.append(creatorField);
-					} else if (attribute == 'created_time') {
-						//let createdTimeField = document.createElement("span");
-						//createdTimeField.setAttribute("id", attribute+room['id']);
-						spanCreatedTime.setAttribute("id", attribute+room['id']);
-						spanCreatedTime.setAttribute("name", attribute+room['id']);
-						spanCreatedTime.innerHTML = room[attribute] + " ";
+							//p_list.append(creatorField);
+						} else if (attribute == 'created_time') {
+							//let createdTimeField = document.createElement("span");
+							//createdTimeField.setAttribute("id", attribute+room['id']);
+							spanCreatedTime.setAttribute("id", attribute+room['id']);
+							spanCreatedTime.setAttribute("name", attribute+room['id']);
+							spanCreatedTime.innerHTML = room[attribute] + " ";
 
-						//p_list.append(createdTimeField);
-					} else if (attribute == 'member') {
-						//let memberField = document.createElement("span");
-						//memberField.setAttribute("id", attribute+room['id']);
-						spanCount.setAttribute("id", attribute+room['id']);
-						spanCount.setAttribute("name", attribute+room['id']);
-						spanCount.innerHTML = room[attribute] + " /";
+							//p_list.append(createdTimeField);
+						} else if (attribute == 'member') {
+							//let memberField = document.createElement("span");
+							//memberField.setAttribute("id", attribute+room['id']);
+							spanCount.setAttribute("id", attribute+room['id']);
+							spanCount.setAttribute("name", attribute+room['id']);
+							spanCount.innerHTML = room[attribute] + " /";
 
-						//p_list.append(memberField);
-					} else if (attribute == 'member_count') {
-						//let memberCountField = document.createElement("span");
-						//memberCountField.setAttribute("id", attribute+room['id']);
-						spanMembers.setAttribute("id", attribute+room['id']);
-						spanMembers.setAttribute("name", attribute+room['id']);	
-						spanMembers.innerHTML = room[attribute] + " ";
+							//p_list.append(memberField);
+						} else if (attribute == 'member_count') {
+							//let memberCountField = document.createElement("span");
+							//memberCountField.setAttribute("id", attribute+room['id']);
+							spanMembers.setAttribute("id", attribute+room['id']);
+							spanMembers.setAttribute("name", attribute+room['id']);	
+							spanMembers.innerHTML = room[attribute] + " ";
 
-						//p_list.append(memberCountField);
+							//p_list.append(memberCountField);
+						}
 					}
-				}
-				let room_id = room['id'];
-				let nextUrl = "/chatting/room/enter/" + room_id;
-				spanButton.innerHTML = "<form method='GET' action='"+nextUrl+"'><input type='submit' value='ENTER'></form>";
-				spanButton.setAttribute("id", "button"+room['id']);
-				spanButton.setAttribute("name", "button"+room['id']);
-				$('#chatting_room_list').after(newOne);
-				p_list.setAttribute("id", room['id']);
-				p_list.setAttribute("name", "chatting_room"+room['id']);
+					let room_id = room['id'];
+					let nextUrl = "/chatting/room/enter/" + room_id;
+					spanButton.innerHTML = "<form method='GET' action='"+nextUrl+"'><input type='submit' value='ENTER'></form>";
+					spanButton.setAttribute("id", "button"+room['id']);
+					spanButton.setAttribute("name", "button"+room['id']);
+					$('#chatting_room_list').after(newOne);
+					p_list.setAttribute("id", room['id']);
+					p_list.setAttribute("name", "chatting_room"+room['id']);
+					
 				} else {
 					console.log("YES");
 					for (var attribute in room) {
-					var spanName = document.getElementsByName("name"+room['id'])[0];
-					var spanCreator = document.getElementsByName("creator"+room['id'])[0];
-					var spanCreatedTime = document.getElementsByName("created_time"+room['id'])[0];
-					var spanCount = document.getElementsByName("member"+room['id'])[0];
-					var spanMembers = document.getElementsByName("member_count"+room['id'])[0];
-					var spanButton = document.getElementsByName("button"+room['id'])[0];
-					console.log(attribute, room[attribute]);
-					if (attribute == 'name') {
-						//let nameField = document.createElement("span");
-						spanName.innerHTML = room[attribute] + " ";
+						var spanName = document.getElementsByName("name"+room['id'])[0];
+						var spanCreator = document.getElementsByName("creator"+room['id'])[0];
+						var spanCreatedTime = document.getElementsByName("created_time"+room['id'])[0];
+						var spanCount = document.getElementsByName("member"+room['id'])[0];
+						var spanMembers = document.getElementsByName("member_count"+room['id'])[0];
+						var spanButton = document.getElementsByName("button"+room['id'])[0];
 
-						//p_list.append(nameField);
-					} else if (attribute == 'creator') {
-						//let creatorField = document.createElement("span");
-						//creatorField.setAttribute("id", attribute+room['id']);
-						
-						spanCreator.innerHTML = room[attribute] + " ";
+						if (attribute == 'name') {
+							//let nameField = document.createElement("span");
+							spanName.innerHTML = room[attribute] + " ";
+								//p_list.append(nameField);
+						} else if (attribute == 'creator') {
+							//let creatorField = document.createElement("span");
+							//creatorField.setAttribute("id", attribute+room['id']);
+								
+							spanCreator.innerHTML = room[attribute] + " ";
+							//p_list.append(creatorField);
+						} else if (attribute == 'created_time') {
+							//let createdTimeField = document.createElement("span");
+							//createdTimeField.setAttribute("id", attribute+room['id']);
+							
+							spanCreatedTime.innerHTML = room[attribute] + " ";
 
-						//p_list.append(creatorField);
-					} else if (attribute == 'created_time') {
-						//let createdTimeField = document.createElement("span");
-						//createdTimeField.setAttribute("id", attribute+room['id']);
-						
-						spanCreatedTime.innerHTML = room[attribute] + " ";
+							//p_list.append(createdTimeField);
+						} else if (attribute == 'member') {
+							//let memberField = document.createElement("span");
+							//memberField.setAttribute("id", attribute+room['id']);
+								
+							spanCount.innerHTML = room[attribute] + " /";
 
-						//p_list.append(createdTimeField);
-					} else if (attribute == 'member') {
-						//let memberField = document.createElement("span");
-						//memberField.setAttribute("id", attribute+room['id']);
-						
-						spanCount.innerHTML = room[attribute] + " /";
+							//p_list.append(memberField);
+						} else if (attribute == 'member_count') {
+							//let memberCountField = document.createElement("span");
+							//memberCountField.setAttribute("id", attribute+room['id']);
+								
+							spanMembers.innerHTML = room[attribute] + " ";
 
-						//p_list.append(memberField);
-					} else if (attribute == 'member_count') {
-						//let memberCountField = document.createElement("span");
-						//memberCountField.setAttribute("id", attribute+room['id']);
-						
-						spanMembers.innerHTML = room[attribute] + " ";
-
-						//p_list.append(memberCountField);
+							//p_list.append(memberCountField);
+						}
 					}
 				}
-				}
-				
-
-			}
-			
+			}	
 		</script>
 
 	{% endblock %}
