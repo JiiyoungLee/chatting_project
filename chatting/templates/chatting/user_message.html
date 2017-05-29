@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html>
+<head>
+</head>
+<body>
+	{% extends "chatting/base.html" %}
+
+	{% block content %}
+		<form method="POST" action="{{ request.path }}">
+			{% csrf_token %}
+			{{ form.as_p }}
+			<input type="hidden" name="sender" id="hdn_sender">
+			<input type="hidden" name="receiver" id="hdn_receiver">
+			<input type="submit" value="SEND" id="btn_send">
+		</form>
+		<script>
+			document.getElementById("id_sender").setAttribute("disabled", "");
+			document.getElementById("id_receiver").setAttribute("disabled", "");
+			document.getElementById("hdn_sender").value=document.getElementById("id_sender").value;
+			document.getElementById("hdn_receiver").value=document.getElementById("id_receiver").value;
+		</script>
+		{% if result %}
+			<script>
+				alert("MESSAGE IS SENT!!!");
+				window.close();
+			</script>
+		{% endif %}
+	{% endblock %}
+	
+</body>
+</html>

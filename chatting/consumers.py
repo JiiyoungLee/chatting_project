@@ -38,7 +38,7 @@ def ws_disconnect(message):
 
 @channel_session_user_from_http
 def room_connect(message):
-	print("room_connect")
+	#print("room_connect")
 	Group("room").add(message.reply_channel)
 	for room in ChattingRoom.objects.all():
 		room_info = {'id': room.id, 'name': room.room_name, 
@@ -67,7 +67,20 @@ def room_connect(message):
 
 @channel_session_user
 def room_disconnect(message):
-	print("room_disconnect")
+	#print("room_disconnect")
+	Group("room").add(message.reply_channel)
+	for room in ChattingRoom.objects.all():
+		room_info = {'id': room.id, 'name': room.room_name, 
+		'creator': room.creator, 
+		'created_time': room.created_time.strftime("%Y-%m-%d"), 
+		'member': room.member.all().count(), 
+		'member_count': room.member_count
+		}
+		 
+		Group("room").send({
+			"text": json.dumps(room_info) 
+		})
+
 	Group("room").discard(message.reply_channel)
 	"""Group("room").send({
 		"text": '{"user": "'+ message.user.username +'", "room": "disconnects", "from": "room"}',
@@ -76,16 +89,15 @@ def room_disconnect(message):
 
 
 def room_message(message):
-	print(message.content['text'])
+	#print(message.content['text'])
 	Group("room").send({
 		"text": message.content['text'],
 	})
 	
 
 def room_list_connect(message):
-	print("room_list_connect")
+	#print("room_list_connect")
 	Group("room").add(message.reply_channel)
-	print(ChattingRoom.objects.all())
 	for room in ChattingRoom.objects.all():
 		room_info = {'id': room.id, 'name': room.room_name, 
 		'creator': room.creator, 
@@ -103,6 +115,28 @@ def room_list_connect(message):
 	})
 
 def room_list_disconnect(message):
-	print("room_list_disconnect")
+	#print("room_list_disconnect")
 	Group("room").discard(message.reply_channel)
+
+@channel_session	
+def test_connect(message):
+	Group("test").add(message.reply_channel)
+	message.reply_channel.send({
+		"accept": True
+		})
 	
+
+@channel_session
+def test_disconnect(message):
+	print("@@@disconnect")
+	Group("test").discard(message.reply_channel)
+
+@channel_session
+def test_message(message):
+	print(message.content['text'])
+	message_dict = json.loads(message.content['text'])
+	print(message_dict)
+
+	Group("test").send({
+		"text": message.content['text'],
+		})

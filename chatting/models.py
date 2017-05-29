@@ -30,3 +30,13 @@ class ChattingMessage(models.Model):
 	def __str__(self):
 		return 'sender: ' + self.sender + ' context: ' + self.context
 
+class UserMessage(models.Model):
+	sender = models.ForeignKey(User, related_name='message_sender')
+	receiver = models.ForeignKey(User, related_name='message_receiver')
+	context = models.CharField(max_length=200)
+	created_time = models.DateTimeField(auto_now=False, auto_now_add=True)
+	modified_time = models.DateTimeField(auto_now=True)
+
+	def __str__(self):
+		return 'sender: ' + self.sender + 'receiver: ' + self.receiver + ' context: ' + self.context
+

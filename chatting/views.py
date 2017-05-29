@@ -6,7 +6,7 @@ from django.conf import settings
 from .models import ChattingRoom, ChattingMessage
 from django.contrib.auth.models import User
 from django.contrib.auth import login, authenticate
-from .forms import UserForm, UserNameForm, MakeRoomForm, ChattingMessageForm
+from .forms import UserForm, UserNameForm, MakeRoomForm, ChattingMessageForm, UserMessageForm
 from django.views import View
 from django.views.generic import ListView
 import os
@@ -86,18 +86,35 @@ class ChattingView(View):
 		this_room = ChattingRoom.objects.get(id=room_id)
 		this_room.member.add(request.user)
 		this_room.save()
-		chatting_messages = ChattingMessage.objects.filter(chatting_room_id=room_id)
+		members = User.objects.exclude(username=request.user.username).exclude(username='admin')
 		form = ChattingMessageForm()
-		context = {'form': form, 'chatting_messages': chatting_messages, 'room': this_room.id }
+		context = {'form': form, 'members': members, 'room': this_room.id }
 		return render(request, self.template_name, context)
 
 class ExitRoomView(View):
 	template_name = 'chatting/rooms.html'
 
 	def get(self, request, *args, **kwargs):
-		print("EXIT")
 		room_id = kwargs['room_id']
 		this_room = ChattingRoom.objects.get(id=room_id)
 		this_room.member.remove(request.user)
 		this_room.save()
 		return HttpResponseRedirect(reverse('chatting:room_list'))
+
+class MessageView(View):
+	template_name = 'chatting/user_message.html'
+
+	def get(self, request, *args, **kwargs):
+		form = UserMessageForm(initial={'sender': request.user, 'receiver': User.objects.get(id=kwargs['receiver_id'])})
+		context = { 'form': form }
+		return render(request, self.template_name, context)
+
+	def post(self, request, *args, **kwargs):
+		print(request.POST)
+		"""sender = User.objects.get(username=request.POST['sender'])
+		receiver = User.objects.get(username=request.POST['receiver'])
+		context = request.POST['context']"""
+		form = UserMessageForm(request.POST)
+		instance = form.save()
+		context = { 'result': instance }
+		return render(request, self.template_name, context)

@@ -6,11 +6,11 @@
 	{% extends "chatting/base.html" %}
 
 	{% block content %}
-		<form method="POST" action="{% url 'chatting:make_room' %}">
+		<form method="POST" action="{% url 'chatting:make_room' %}" target="_blank">
 			{% csrf_token %}
 			{{ form.as_p }}
 			<input type="hidden" name='creator' value='{{ request.session.user }}'>
-			<input type="submit" value="Make">
+			<input type="submit" value="Make" id="make_room">
 		</form>
 		<script>
 			window.onload = function() {
@@ -18,6 +18,9 @@
 				creator.value = '{{ request.session.user }}';
 				creator.setAttribute("disabled", "");
 			};
+			document.getElementById("make_room").onclick = function() {
+				window.history.back();
+			}
 		</script>
 	{% endblock %}
 

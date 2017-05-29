@@ -24,16 +24,12 @@
 			
 			socket = new WebSocket(ws_path);
 
-			socket.onopen = function() {
-				console.log("OPEN");
-			}
 			
-			console.log(window.location.host);
 			socket.onmessage = function(message) {
 				var p_list = document.getElementById("chatting_room_list");
 				var newOne = p_list.cloneNode(true);
-				console.log(message.data);
-				console.log(JSON.parse(message.data));
+				//console.log(message.data);
+				//console.log(JSON.parse(message.data));
 				
 				var room = JSON.parse(message.data);
 				var find_room = document.getElementById(room['id']);
@@ -90,7 +86,7 @@
 					}
 					let room_id = room['id'];
 					let nextUrl = "/chatting/room/enter/" + room_id;
-					spanButton.innerHTML = "<form method='GET' action='"+nextUrl+"'><input type='submit' value='ENTER'></form>";
+					spanButton.innerHTML = "<form method='GET' action='"+nextUrl+"' target='_blank' ><input type='submit' value='ENTER'></form>";
 					spanButton.setAttribute("id", "button"+room['id']);
 					spanButton.setAttribute("name", "button"+room['id']);
 					$('#chatting_room_list').after(newOne);
@@ -141,7 +137,40 @@
 						}
 					}
 				}
-			}	
+			}
+			var mySocket = new WebSocket("ws://" + window.location.host + "/message_test/");
+			var sender = '{{ request.session.user }}';
+			var msgCode = "";
+			var msgContext = "";
+
+			mySocket.onopen = function() {
+				msgCode = "noti";
+				msgContext = "enter to room list";
+				
+				mySocket.send(
+					JSON.stringify({
+					'sender': sender,
+					'msgCode': msgCode,
+					'msgContext': msgContext,
+				})
+				);
+			}
+			mySocket.onclose = function() {
+				msgCode = "noti";
+				msgContext = "exit to room list";
+				
+				mySocket.send(
+					JSON.stringify({
+					'sender': sender,
+					'msgCode': msgCode,
+					'msgContext': msgContext,
+				})
+				);
+			}
+
+			mySocket.onmessage = function(msg) {
+				console.log("MESSAGE: ", msg );
+			}
 		</script>
 
 	{% endblock %}

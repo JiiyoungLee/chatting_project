@@ -11,4 +11,5 @@ urlpatterns = [
     url(r'^room/make$', views.MakeRoomView.as_view(), name='make_room'),
     url(r'^room/enter/(?P<room_id>\d+)', views.ChattingView.as_view(), name='chatting'),
     url(r'^room/exit/(?P<room_id>\d+)', views.ExitRoomView.as_view(), name='exit_room'),
+    url(r'^message/(?P<sender_id>\d+)/(?P<receiver_id>\d+)', views.MessageView.as_view(), name='user_message'),
 ]

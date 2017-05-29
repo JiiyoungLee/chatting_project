@@ -14,6 +14,11 @@
 		</div>
 		{{form.as_p}}
 		<button id="btn_chat">CHAT</button>
+		<div id="div_members">
+			{% for member in members %}
+			<button type="submit" style="background-color:white;" name="user_message" id="{{ member.id }}">{{ member.username }}</button>
+			{% endfor %}
+		</div>
 		<script>
 		console.log('{{ request.path }}');
 		var path = '{{request.path}}';
@@ -53,16 +58,11 @@
 		}
 
 
-		chatButton.onclick = function() {
-				console.log(document.getElementById('id_context').value);
-				var data = document.getElementById('id_context').value
-				socket.send('{"msg": "' + context.value +'" , "sender": "{{ request.session.user }}"}');
-				context.value = "";
-		}
+		
 
 		exitButton.onclick = function() {
 			
-			window.history.go(-2);
+			window.close();
 		}
 
 
@@ -76,7 +76,74 @@
 			//exitButton.onclick();
 		//}
 		
+		var mySocket = new WebSocket("ws://" + window.location.host + "/message_test/");
+		var sender = '{{ request.session.user }}';
+		var msgCode = "";
+		var msgContext = "";
+		var room = pathArr[pathArr.length - 1]
 
+		mySocket.onopen = function() {
+			msgCode = "noti";
+			msgContext = "enter to room";
+				
+			mySocket.send(
+				JSON.stringify({
+				'sender': sender,
+				'msgCode': msgCode,
+				'msgContext': msgContext,
+				'room': room,
+			})
+			);
+		}
+			
+
+		mySocket.onmessage = function(msg) {
+			console.log("MESSAGE: ", msg );
+			console.log(JSON.parse(msg.data));
+			var message = JSON.parse(msg.data);
+			if (message['msgCode'] == 'noti') {
+				console.log(message['sender'], message['msgContext']);	
+			} else if (message['msgCode'] == 'message') {
+				alert(message['msgContext']);
+			}
+			
+		}
+
+		chatButton.onclick = function() {
+			console.log(document.getElementById('id_context').value);
+			var data = document.getElementById('id_context').value
+			socket.send('{"msg": "' + context.value +'" , "sender": "{{ request.session.user }}"}');
+			msgCode = "message";
+			msgContext = context.value;
+			mySocket.send(
+			JSON.stringify({
+					'sender': sender,
+					'msgCode': msgCode,
+					'msgContext': msgContext,
+					'room': room,
+				})
+			);
+			context.value = "";
+		}
+
+		var xhttp = new XMLHttpRequest();
+
+		var userMessage = document.getElementsByName("user_message");
+		for (let i = 0; i <  userMessage.length; i++) {
+			userMessage[i].onclick = function() {
+				console.log(userMessage[i].id);
+				receiver_id = userMessage[i].id
+				window.open("/chatting/message/"+'{{ request.user.id }}'+"/"+receiver_id);
+				//xhttp.open("GET", "/chatting/message/"+receiver_id);
+				//xhttp.send();
+			}
+
+			xhttp.onreadystatechange = function() {
+				if (this.readyState == 4 && this.status == 200) {
+					
+				}
+			}
+		}
 		</script>
 	{% endblock %}
 	
