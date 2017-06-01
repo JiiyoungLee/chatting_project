@@ -12,18 +12,115 @@
 		<button id="btn_exit">EXIT</button>
 		<div id = "div_test">
 		</div>
-		{{form.as_p}}
+			{{ chatting_form.as_p }}
 		<button id="btn_chat">CHAT</button>
 		<div id="div_members">
 			{% for member in members %}
 			<button type="submit" style="background-color:white;" name="user_message" id="{{ member.id }}">{{ member.username }}</button>
 			{% endfor %}
 		</div>
+		<div id="div_loggedin_members">
+			
+		</div>
+		<div id="div_slip_message" style="display:none">
+			{{ message_form.as_p }}
+			<button type="submit" id="btn_send_message">SEND</button>
+		</div>
 		<script>
-		console.log('{{ request.path }}');
+			var webPath = "ws://" + window.location.host + "/chat_test/";
+			var websocket = new WebSocket(webPath);
+			var pathArr = '{{ request.path }}'.split("/");
+			var roomNumber = pathArr[pathArr.length - 1];
+
+			window.onload = function() {
+				var sender = document.getElementById('id_sender');
+				sender.value = '{{ request.session.user }}';
+				sender.setAttribute("disabled", "");
+			};
+
+			var messageBtn = document.getElementsByName('user_message');
+			for (let i = 0; i < messageBtn.length; i++){
+				messageBtn[i].onclick = function() {
+					if (document.getElementById("id_message_receiver").value == messageBtn[i].innerHTML && document.getElementById("div_slip_message").style.display == "block") {
+						document.getElementById("div_slip_message").style.display = "none";
+					} else {
+						document.getElementById("id_message_receiver").value = messageBtn[i].innerHTML;
+						document.getElementById("id_message_sender").setAttribute("readonly", "");
+						document.getElementById("id_message_receiver").setAttribute("readonly", "");
+						document.getElementById("id_message_context").value = "";
+						document.getElementById("div_slip_message").style.display = "block";
+					}
+				}
+			}
+			var messageSendBtn = document.getElementById('btn_send_message');
+			var xhttp = new XMLHttpRequest();
+			messageSendBtn.onclick = function() {
+				$.ajax({
+					type: 'POST',
+					url: '{{ request.path }}',
+					data: { 'csrfmiddlewaretoken': '{{ csrf_token }}', 'sender': document.getElementById("id_message_sender").value, 'receiver': document.getElementById("id_message_receiver").value, 'context': document.getElementById("id_message_context").value },
+					dataType: 'json',
+					success: function(result) {
+						console.log("RESULT");
+						console.log(result);
+						window.opener.sendMessage(document.getElementById("id_message_sender").value, document.getElementById("id_message_receiver").value, document.getElementById("id_message_context").value);
+						document.getElementById("id_message_context").value = "";
+						document.getElementById("div_slip_message").style.display = "none";
+					},
+					error: function(e) {
+						console.log("ERROR");
+						console.log(e);
+					}
+				});
+			}
+			/*websocket.onopen = function() {
+				websocket.send(JSON.stringify({
+					"code": "msg",
+					"sender": '{{ request.user }}',
+					"context": "hello world",
+					"room":  roomNumber,
+				}));
+			}
+
+			websocket.onmessage = function(message) {
+				console.log(JSON.parse(message.data));
+				let input = JSON.parse(message.data)
+				if (input.code == 'info room') {
+					console.log(JSON.parse(input.context));
+				} else if (input.code == 'info user') {
+					console.log(JSON.parse(input.context));
+				}
+			}*/
+			var btnExit = document.getElementById("btn_exit");
+			btnExit.onclick = function() {
+				window.opener.closeChattingRoom(roomNumber, window);
+				window.close();
+			}
+			var chatButton = document.getElementById('btn_chat');
+			var div = document.getElementById("div_test");
+			var context = document.getElementById('id_context');
+
+			chatButton.onclick = function() {
+				var message = document.getElementById('id_context').value;
+				window.opener.sendChattingMessage(roomNumber, message);
+				context.value = "";
+			}
+
+			function receiveChattingMessage(message) {
+				if (message.room == roomNumber) {
+					div.innerHTML += message.sender + ": " + message.context + "<br>";
+				}
+			}
+
+			function receiveMessage(message) {
+				if (message['receiver'] == '{{ request.user }}') {
+					alert(message['sender'] + ": " + message['context']);
+				}
+			}
+		/*
 		var path = '{{request.path}}';
 		var pathArr = path.split('/');
-		console.log(pathArr);
+		
 		window.onload = function() {
 			var sender = document.getElementById('id_sender');
 			sender.value = '{{ request.session.user }}';
@@ -105,6 +202,8 @@
 				console.log(message['sender'], message['msgContext']);	
 			} else if (message['msgCode'] == 'message') {
 				alert(message['msgContext']);
+			} else if (message['msg_code'] == 'info') {
+				console.log(message);
 			}
 			
 		}
@@ -143,7 +242,7 @@
 					
 				}
 			}
-		}
+		}*/
 		</script>
 	{% endblock %}
 	

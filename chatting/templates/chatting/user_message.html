@@ -13,16 +13,37 @@
 			<input type="hidden" name="receiver" id="hdn_receiver">
 			<input type="submit" value="SEND" id="btn_send">
 		</form>
-		<script>
-			document.getElementById("id_sender").setAttribute("disabled", "");
-			document.getElementById("id_receiver").setAttribute("disabled", "");
-			document.getElementById("hdn_sender").value=document.getElementById("id_sender").value;
-			document.getElementById("hdn_receiver").value=document.getElementById("id_receiver").value;
-		</script>
 		{% if result %}
 			<script>
+				var mySocket = new WebSocket("ws://" + window.location.host + "/message_test/");
+				var sender = '{{ request.session.user }}';
+				var msgCode = "";
+				var msgContext = "";
+				var receiver = '{{ result.receiver }}';
+
+				mySocket.onopen = function() {
+					msgCode = "message";
+					msgContext = '{{ result.context }}';
+
+					
+					mySocket.send(
+						JSON.stringify({
+						'sender': sender,
+						'msgCode': msgCode,
+						'msgContext': msgContext,
+						'receiver': receiver,
+						})
+					);
+				}
 				alert("MESSAGE IS SENT!!!");
 				window.close();
+			</script>
+		{% else %}
+			<script>
+				document.getElementById("id_sender").setAttribute("disabled", "");
+				document.getElementById("id_receiver").setAttribute("disabled", "");
+				document.getElementById("hdn_sender").value=document.getElementById("id_sender").value;
+				document.getElementById("hdn_receiver").value=document.getElementById("id_receiver").value;
 			</script>
 		{% endif %}
 	{% endblock %}

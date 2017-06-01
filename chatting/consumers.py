@@ -2,11 +2,12 @@ from django.http import HttpResponse
 from channels import Group
 from channels.sessions import channel_session
 from channels.auth import channel_session_user, channel_session_user_from_http
-from .models import ChattingRoom
+from .models import ChattingRoom, UserLogin
 from django.contrib.auth.models import User
 from django.core import serializers
 from collections import OrderedDict
 import json
+
 
 @channel_session
 def ws_message(message):
@@ -47,9 +48,14 @@ def room_connect(message):
 		'member': room.member.all().count(), 
 		'member_count': room.member_count
 		}
-		 
 		Group("room").send({
 			"text": json.dumps(room_info) 
+		})
+	for user in UserLogin.objects.all():
+		user_info = {'msg_code': 'info', 'id': user.user.id, 
+		'username': user.user.username, 'is_loggedin': user.is_loggedin}
+		Group("room").send({
+			"text": json.dumps(user_info)
 		})
 
 	message.reply_channel.send({
@@ -81,6 +87,13 @@ def room_disconnect(message):
 			"text": json.dumps(room_info) 
 		})
 
+	for user in UserLogin.objects.all():
+		user_info = {'msg_code': 'info', 'id': user.user.id, 
+		'username': user.user.username, 'is_loggedin': user.is_loggedin}
+		Group("room").send({
+			"text": json.dumps(user_info)
+		})
+			
 	Group("room").discard(message.reply_channel)
 	"""Group("room").send({
 		"text": '{"user": "'+ message.user.username +'", "room": "disconnects", "from": "room"}',
@@ -109,6 +122,13 @@ def room_list_connect(message):
 		Group("room").send({
 			"text": json.dumps(room_info) 
 		})
+
+	for user in UserLogin.objects.all():
+		user_info = {'msg_code': 'info', 'id': user.user.id, 
+		'username': user.user.username, 'is_loggedin': user.is_loggedin}
+		Group("room").send({
+			"text": json.dumps(user_info)
+		})
 	
 	message.reply_channel.send({
 		"accept": True,
@@ -121,6 +141,7 @@ def room_list_disconnect(message):
 @channel_session	
 def test_connect(message):
 	Group("test").add(message.reply_channel)
+		
 	message.reply_channel.send({
 		"accept": True
 		})
@@ -128,15 +149,55 @@ def test_connect(message):
 
 @channel_session
 def test_disconnect(message):
-	print("@@@disconnect")
 	Group("test").discard(message.reply_channel)
 
 @channel_session
 def test_message(message):
 	print(message.content['text'])
+	#message_dict = json.loads(message.content['text'])
+	#print(message_dict)
+	for room in ChattingRoom.objects.all():
+		room_info = json.dumps({'id': room.id, 
+		'name': room.room_name, 
+		'creator': room.creator, 
+		'created_time': room.created_time.strftime("%Y-%m-%d"), 
+		'member': room.member.all().count(), 
+		'member_count': room.member_count
+		})
+		Group("test").send({
+			"text": json.dumps({'code': 'info room', 'sender': 'system', 'context': room_info})
+			})
+
+	for user in UserLogin.objects.all():
+		user_info = json.dumps({'id': user.user.id, 
+		'username': user.user.username,
+		'is_loggedin': user.is_loggedin,
+		})
+		Group("test").send({
+			"text": json.dumps({'code': 'info user', 'sender': 'system', 'context': user_info})
+			})
+	Group("test").send({
+		"text": message.content['text'],
+		})
+
+@channel_session
+def test_chat_connect(message):
+	Group("chat").add(message.reply_channel)
+	message.reply_channel.send({
+		"accept": True
+		})
+	
+
+@channel_session_user
+def test_chat_disconnect(message):
+	Group("chat").discard(message.reply_channel)
+
+@channel_session_user
+def test_chat_message(message):
+	print(message.content['text'])
 	message_dict = json.loads(message.content['text'])
 	print(message_dict)
 
-	Group("test").send({
+	Group("chat").send({
 		"text": message.content['text'],
 		})

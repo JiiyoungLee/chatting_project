@@ -30,9 +30,9 @@ class UserMessageForm(forms.ModelForm):
 		model = UserMessage
 		exclude = ['created_time', 'modified_time']
 		widgets = {
-			'sender': TextInput,
-			'receiver': TextInput,
-			'context': Textarea(attrs={'cols': 40, 'rows': 5}),
+			'sender': TextInput(attrs={'id': 'id_message_sender',}),
+			'receiver': TextInput(attrs={'id': 'id_message_receiver',}),
+			'context': Textarea(attrs={'id': 'id_message_context', 'cols': 40, 'rows': 5}),
 		}
 
 		

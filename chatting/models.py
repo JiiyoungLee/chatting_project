@@ -3,6 +3,10 @@ from django.utils import timezone
 from django.contrib.auth.models import User
 
 # Create your models here.
+class UserLogin(models.Model):
+	user = models.OneToOneField(User)
+	is_loggedin = models.BooleanField(default=0)
+
 class ChattingRoom(models.Model):
 	MEMBERCOUNTCHOICE = (
 		('2', 2),
@@ -37,6 +41,4 @@ class UserMessage(models.Model):
 	created_time = models.DateTimeField(auto_now=False, auto_now_add=True)
 	modified_time = models.DateTimeField(auto_now=True)
 
-	def __str__(self):
-		return 'sender: ' + self.sender + 'receiver: ' + self.receiver + ' context: ' + self.context
 

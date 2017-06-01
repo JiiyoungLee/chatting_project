@@ -7,6 +7,9 @@
 		
 	{% block content %}
 	Hello {{ request.session.user }}
+	<form method="GET" action="{% url 'chatting:logout' %}">
+		<input type="submit" value="LOG OUT">
+	</form>
 	
 		<p id = "chatting_room_list">
 			<span name="chattingroom_name"></span>
@@ -20,7 +23,153 @@
 			<input type="submit" value="Make A Chatting Room">
 		</form>
 		<script>
-			var ws_path = "ws://" + window.location.host + "/list/";
+			var webPath = "ws://" + window.location.host + "/message_test/";
+			var websocket = new WebSocket(webPath);
+			var chattingRoomWindow = [];
+				
+			websocket.onopen = function() {
+				websocket.send(JSON.stringify({
+					"code": "noti",
+					"sender": '{{ request.user }}',
+					"context": "enter room list" 
+				}));
+			}
+
+			websocket.onmessage = function(message) {
+				console.log(JSON.parse(message.data));
+				let input = JSON.parse(message.data)
+				if (input.code == 'info room') {
+					console.log(JSON.parse(input.context));
+					var roomInfo = JSON.parse(input.context);
+					makeRoom(roomInfo);
+				} else if (input.code == 'info user') {
+					console.log(JSON.parse(input.context));
+				} else if (input.code == 'msg') {
+					if (input.receiver) {
+						makeMessage(input);
+					} else if (input.room){
+						makeChattingMessage(input);
+					}
+				}
+			}
+
+			function makeRoom(roomInfo) {
+				var p_list = document.getElementById("chatting_room_list");
+				var newOne = p_list.cloneNode(true);
+				var roomId = roomInfo['id'];
+				var existRoom = document.getElementById(roomId);
+				if (existRoom) {
+					for (var attribute in roomInfo) {
+						var spanName = document.getElementsByName("name"+roomId)[0];
+						var spanCreator = document.getElementsByName("creator"+roomId)[0];
+						var spanCreatedTime = document.getElementsByName("created_time"+roomId)[0];
+						var spanCount = document.getElementsByName("member"+roomId)[0];
+						var spanMembers = document.getElementsByName("member_count"+roomId)[0];
+						
+						if (attribute == 'name') {
+							spanName.innerHTML = roomInfo[attribute] + " ";
+						} else if (attribute == 'creator') {
+							spanCreator.innerHTML = roomInfo[attribute] + " ";
+						} else if (attribute == 'created_time') {
+							spanCreatedTime.innerHTML = roomInfo[attribute] + " ";
+						} else if (attribute == 'member') {
+							spanCount.innerHTML = roomInfo[attribute] + " /";
+						} else if (attribute == 'member_count') {
+							spanMembers.innerHTML = roomInfo[attribute] + " ";
+						}
+					}	
+				} else {
+					for (var attribute in roomInfo) {
+						var spanName = document.getElementsByName("chattingroom_name")[0];
+						var spanCreator = document.getElementsByName("chattingroom_creator")[0];
+						var spanCreatedTime = document.getElementsByName("chattingroom_created_time")[0];
+						var spanCount = document.getElementsByName("chattingroom_count")[0];
+						var spanMembers = document.getElementsByName("chattingroom_members")[0];
+						var spanButton = document.getElementsByName("chattingroom_button")[0];
+						
+						if (attribute == 'name') {
+							spanName.setAttribute("id", attribute+roomId);
+							spanName.setAttribute("name", attribute+roomId);
+							spanName.innerHTML = roomInfo[attribute] + " ";
+						} else if (attribute == 'creator') {
+							spanCreator.setAttribute("id", attribute+roomId);
+							spanCreator.setAttribute("name", attribute+roomId);
+							spanCreator.innerHTML = roomInfo[attribute] + " ";
+						} else if (attribute == 'created_time') {							
+							spanCreatedTime.setAttribute("id", attribute+roomId);
+							spanCreatedTime.setAttribute("name", attribute+roomId);
+							spanCreatedTime.innerHTML = roomInfo[attribute] + " ";
+						} else if (attribute == 'member') {
+							spanCount.setAttribute("id", attribute+roomId);
+							spanCount.setAttribute("name", attribute+roomId);
+							spanCount.innerHTML = roomInfo[attribute] + " /";
+						} else if (attribute == 'member_count') {
+							spanMembers.setAttribute("id", attribute+roomId);
+							spanMembers.setAttribute("name", attribute+roomId);	
+							spanMembers.innerHTML = roomInfo[attribute] + " ";
+						}
+					}				
+					spanButton.innerHTML = "<button name='btn_enter' id=btn"+roomId+" onclick='openChattingRoom("+roomId+")'>ENTER</button>";
+					spanButton.setAttribute("id", "button"+roomId);
+					spanButton.setAttribute("name", "button"+roomId);
+					
+					$('#chatting_room_list').after(newOne);
+					p_list.setAttribute("id", roomId);
+					p_list.setAttribute("name", "chatting_room"+roomId);
+				}
+			}
+
+			function openChattingRoom(roomId) {
+				var nextUrl = "/chatting/room/enter/" + roomId;
+				websocket.send(JSON.stringify({
+					"code": "noti",
+					"sender": '{{ request.user }}',
+					"context": "enter room",
+					"room": roomId,
+				}));
+				chattingRoomWindow.push({'roomWindow' : window.open(nextUrl), 'roomNumber': roomId});
+				console.log(chattingRoomWindow);
+			}
+
+			function closeChattingRoom(roomNumber, childWindow) {
+				websocket.send(JSON.stringify({
+					"code": "noti",
+					"sender": '{{ request.user }}',
+					"context": "exit room",
+					"room": roomNumber,
+				}));				
+			}
+
+			function sendChattingMessage(roomNumber, chattingMessage) {
+				websocket.send(JSON.stringify({
+					"code": "msg",
+					"sender": '{{ request.user }}',
+					"context": chattingMessage,
+					"room": roomNumber,
+				}));
+			}
+
+			function makeChattingMessage(chattingMessage) {
+				for (var i in chattingRoomWindow) {
+					chattingRoomWindow[i]['roomWindow'].receiveChattingMessage(chattingMessage);
+				}
+			}
+
+			function sendMessage(senderId, receiverUserName, context) {
+				websocket.send(JSON.stringify({
+					"code": "msg",
+					"sender": senderId,
+					"context": context,
+					"receiver": receiverUserName,
+				}));
+			}
+
+			function makeMessage(message) {
+				for (var i in chattingRoomWindow) {
+					chattingRoomWindow[i]['roomWindow'].receiveMessage(message);
+				}
+			}
+			/*var ws_path = "ws://" + window.location.host + "/list/";
 			
 			socket = new WebSocket(ws_path);
 
@@ -31,8 +180,12 @@
 				//console.log(message.data);
 				//console.log(JSON.parse(message.data));
 				
-				var room = JSON.parse(message.data);
-				var find_room = document.getElementById(room['id']);
+				var input_message = JSON.parse(message.data);
+				var room;
+				var user;
+				if (!input_message['msg_code']) {
+					room = input_message
+					var find_room = document.getElementById(room['id']);
 				if (!find_room) {
 					console.log("NO");
 					for (var attribute in room) {
@@ -86,9 +239,10 @@
 					}
 					let room_id = room['id'];
 					let nextUrl = "/chatting/room/enter/" + room_id;
-					spanButton.innerHTML = "<form method='GET' action='"+nextUrl+"' target='_blank' ><input type='submit' value='ENTER'></form>";
+					spanButton.innerHTML = "<button name='btn_enter' id="+room_id+" onclick='myFunc("+room_id+")'>ENTER</button>";
 					spanButton.setAttribute("id", "button"+room['id']);
 					spanButton.setAttribute("name", "button"+room['id']);
+					
 					$('#chatting_room_list').after(newOne);
 					p_list.setAttribute("id", room['id']);
 					p_list.setAttribute("name", "chatting_room"+room['id']);
@@ -137,6 +291,10 @@
 						}
 					}
 				}
+				} else {
+					user = input_message
+				}
+				
 			}
 			var mySocket = new WebSocket("ws://" + window.location.host + "/message_test/");
 			var sender = '{{ request.session.user }}';
@@ -170,7 +328,22 @@
 
 			mySocket.onmessage = function(msg) {
 				console.log("MESSAGE: ", msg );
+				console.log(JSON.parse(msg.data));
+				var message = JSON.parse(msg.data);
+				if (message['msgCode'] == 'noti') {
+					console.log(message['sender'], message['msgContext']);	
+				} else if (message['msgCode'] == 'message') {
+					alert(message['msgContext']);
+				}
+				
 			}
+			
+			function myFunc(room_id) {
+				var chattingRoomWindow = window.open("/chatting/room/enter/"+room_id);
+			}
+			*/
+
+
 		</script>
 
 	{% endblock %}
