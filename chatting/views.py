@@ -23,7 +23,6 @@ def login_view(request):
 	password = request.POST['password']
 	user = authenticate(username=username, password=password)
 	if user is not None:
-		print("login!")
 		login(request, user)
 		user_instance, created = UserLogin.objects.get_or_create(
 			user=user
@@ -32,14 +31,13 @@ def login_view(request):
 		user_instance.save()
 		return HttpResponseRedirect(reverse('chatting:room_list'))
 	else:
-		print("fail!")
 		return HttpResponseRedirect(reverse('chatting:index'))
 
 @login_required
 def logout_view(request):
-	user_instance = UserLogin.objects.get(user=request.user)
-	user_instance.is_loggedin = 0
-	user_instance.save()
+	#user_instance = UserLogin.objects.get(user=request.user)
+	#user_instance.is_loggedin = 0
+	#user_instance.save()
 	logout(request)
 	return HttpResponseRedirect(reverse('chatting:index'))
 

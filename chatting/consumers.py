@@ -4,6 +4,7 @@ from channels.sessions import channel_session
 from channels.auth import channel_session_user, channel_session_user_from_http
 from .models import ChattingRoom, UserLogin
 from django.contrib.auth.models import User
+from django.contrib.auth import logout
 from django.core import serializers
 from collections import OrderedDict
 import json
@@ -141,7 +142,6 @@ def room_list_disconnect(message):
 @channel_session	
 def test_connect(message):
 	Group("test").add(message.reply_channel)
-		
 	message.reply_channel.send({
 		"accept": True
 		})
@@ -152,22 +152,56 @@ def test_disconnect(message):
 	Group("test").discard(message.reply_channel)
 
 @channel_session
+@channel_session_user_from_http
 def test_message(message):
 	print(message.content['text'])
+	print(json.loads(message.content['text']))
+	input_message = json.loads(message.content['text'])
+	if input_message['context'] == 'exit room':
+		print("EXIT")
+		room_id = input_message['room']
+		this_room = ChattingRoom.objects.get(id=room_id)
+		this_member = User.objects.get(username=input_message['sender'])
+		this_room.member.remove(this_member)
+		this_room.save()
+	if input_message['context'] == 'logout':
+		print("LOGOUT")
+		this_user = User.objects.get(username=input_message['sender'])
+		user_instance = UserLogin.objects.get(user=this_user)
+		user_instance.is_loggedin = 0
+		user_instance.save()
+
+
 	#message_dict = json.loads(message.content['text'])
 	#print(message_dict)
 	for room in ChattingRoom.objects.all():
-		room_info = json.dumps({'id': room.id, 
-		'name': room.room_name, 
-		'creator': room.creator, 
-		'created_time': room.created_time.strftime("%Y-%m-%d"), 
-		'member': room.member.all().count(), 
-		'member_count': room.member_count
-		})
+		if room.member.all().count() == 0:
+			room_info = json.dumps({'id': room.id,
+				'delete': True
+				})
+			room.delete()
+		else :
+			for room_member in room.member.all():
+				member_info = json.dumps({
+					'room_id': room.id,
+					'member_id': room_member.id,
+					'member_username': room_member.username,
+					'is_loggedin': room_member.is_loggedin,
+					})
+				Group("test").send({
+					"text": json.dumps({'code': 'info member', 'sender': 'system', 'context': member_info})
+					})
+
+			room_info = json.dumps({'id': room.id, 
+			'name': room.room_name, 
+			'creator': room.creator, 
+			'created_time': room.created_time.strftime("%Y-%m-%d"), 
+			'member': room.member.all().count(), 
+			'member_count': room.member_count,
+			})
 		Group("test").send({
 			"text": json.dumps({'code': 'info room', 'sender': 'system', 'context': room_info})
 			})
-
 	for user in UserLogin.objects.all():
 		user_info = json.dumps({'id': user.user.id, 
 		'username': user.user.username,

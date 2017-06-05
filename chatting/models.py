@@ -4,7 +4,7 @@ from django.contrib.auth.models import User
 
 # Create your models here.
 class UserLogin(models.Model):
-	user = models.OneToOneField(User)
+	user = models.OneToOneField(User, related_name='usermember')
 	is_loggedin = models.BooleanField(default=0)
 
 class ChattingRoom(models.Model):
@@ -17,7 +17,7 @@ class ChattingRoom(models.Model):
 	creator = models.CharField(max_length=20)
 	room_name = models.CharField(max_length=100, default='')
 	member_count = models.CharField(max_length=1, choices=MEMBERCOUNTCHOICE)
-	member = models.ManyToManyField(User)
+	member = models.ManyToManyField(User, related_name='join')
 	created_time = models.DateTimeField(auto_now=False, auto_now_add=True)
 	modified_time = models.DateTimeField(auto_now=True)
 
