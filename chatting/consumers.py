@@ -2,11 +2,12 @@ from django.http import HttpResponse
 from channels import Group
 from channels.sessions import channel_session
 from channels.auth import channel_session_user, channel_session_user_from_http
-from .models import ChattingRoom, UserLogin
+from .models import ChattingRoom, UserLogin, UserMessage
 from django.contrib.auth.models import User
 from django.contrib.auth import logout
 from django.core import serializers
 from collections import OrderedDict
+from .forms import UserMessageForm
 import json
 
 
@@ -157,6 +158,11 @@ def test_message(message):
 	print(message.content['text'])
 	print(json.loads(message.content['text']))
 	input_message = json.loads(message.content['text'])
+	if input_message['code'] == 'msg' and 'receiver' in input_message:
+		receiver = User.objects.get(username=input_message['receiver'])
+		sender = User.objects.get(id=input_message['sender'])
+		user_message = UserMessage(receiver=receiver, sender=sender, context=input_message['context'])
+		user_message.save()
 	if input_message['context'] == 'exit room':
 		print("EXIT")
 		room_id = input_message['room']
@@ -170,8 +176,15 @@ def test_message(message):
 		user_instance = UserLogin.objects.get(user=this_user)
 		user_instance.is_loggedin = 0
 		user_instance.save()
-
-
+		these_rooms = ChattingRoom.objects.filter(member=this_user)
+		for this_room in these_rooms:
+			this_room.member.remove(this_user)
+			this_room.save()
+	if input_message['code'] == 'noti' and 'messageId' in input_message:
+		this_message = UserMessage.objects.get(id=input_message['messageId'])
+		this_message.is_checked = 1
+		this_message.save()
+	
 	#message_dict = json.loads(message.content['text'])
 	#print(message_dict)
 	for room in ChattingRoom.objects.all():
@@ -181,17 +194,6 @@ def test_message(message):
 				})
 			room.delete()
 		else :
-			for room_member in room.member.all():
-				member_info = json.dumps({
-					'room_id': room.id,
-					'member_id': room_member.id,
-					'member_username': room_member.username,
-					'is_loggedin': room_member.is_loggedin,
-					})
-				Group("test").send({
-					"text": json.dumps({'code': 'info member', 'sender': 'system', 'context': member_info})
-					})
-
 			room_info = json.dumps({'id': room.id, 
 			'name': room.room_name, 
 			'creator': room.creator, 
@@ -203,9 +205,13 @@ def test_message(message):
 			"text": json.dumps({'code': 'info room', 'sender': 'system', 'context': room_info})
 			})
 	for user in UserLogin.objects.all():
+		join_room = []
+		for join_rel in user.user.join.all():
+			join_room.append(json.dumps({'room_id': join_rel.id, 'room_name': join_rel.room_name}))
 		user_info = json.dumps({'id': user.user.id, 
 		'username': user.user.username,
 		'is_loggedin': user.is_loggedin,
+		'join_member': join_room
 		})
 		Group("test").send({
 			"text": json.dumps({'code': 'info user', 'sender': 'system', 'context': user_info})
@@ -213,6 +219,18 @@ def test_message(message):
 	Group("test").send({
 		"text": message.content['text'],
 		})
+
+	for slip_message in UserMessage.objects.filter(is_checked=0):
+		print(slip_message)	
+		slip_message_info = json.dumps({'id':slip_message.id, 
+		'sender': slip_message.sender.username,
+		'receiver': slip_message.receiver.username,
+		'context': slip_message.context,
+		'send_time': slip_message.created_time.strftime("%Y-%m-%d")
+		})
+		Group("test").send({
+			"text": json.dumps({'code': 'info message', 'sender': 'system', 'context': slip_message_info})
+			})
 
 @channel_session
 def test_chat_connect(message):
@@ -235,3 +253,7 @@ def test_chat_message(message):
 	Group("chat").send({
 		"text": message.content['text'],
 		})
+
+def test_http_consumer(request):
+	print("HELLO THIS IS HTTP")
+	print(request)

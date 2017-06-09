@@ -28,7 +28,7 @@ class ChattingMessageForm(forms.ModelForm):
 class UserMessageForm(forms.ModelForm):
 	class Meta:
 		model = UserMessage
-		exclude = ['created_time', 'modified_time']
+		exclude = ['created_time', 'modified_time', 'is_checked']
 		widgets = {
 			'sender': TextInput(attrs={'id': 'id_message_sender',}),
 			'receiver': TextInput(attrs={'id': 'id_message_receiver',}),

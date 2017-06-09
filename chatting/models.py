@@ -4,7 +4,7 @@ from django.contrib.auth.models import User
 
 # Create your models here.
 class UserLogin(models.Model):
-	user = models.OneToOneField(User, related_name='usermember')
+	user = models.OneToOneField(User)
 	is_loggedin = models.BooleanField(default=0)
 
 class ChattingRoom(models.Model):
@@ -38,6 +38,7 @@ class UserMessage(models.Model):
 	sender = models.ForeignKey(User, related_name='message_sender')
 	receiver = models.ForeignKey(User, related_name='message_receiver')
 	context = models.CharField(max_length=200)
+	is_checked = models.BooleanField(default=0)
 	created_time = models.DateTimeField(auto_now=False, auto_now_add=True)
 	modified_time = models.DateTimeField(auto_now=True)
 

@@ -11,6 +11,12 @@
 		<input type="submit" value="LOG OUT" id="btn_logout" onclick="logoutFunc()">
 	</form>
 		<!--button id="btn_logout" type="submit" onclick="logoutFunc()">LOG OUT</button-->	
+		<p id="slip_message_list">
+			<span name="message_sender"></span>
+			<span name="message_context"></span>
+			<span name="message_send_time"></span>
+			<span name="message_button"></span>
+		</p>
 		<p id = "chatting_room_list">
 			<span name="chattingroom_name"></span>
 			<span name="chattingroom_creator"></span>
@@ -28,8 +34,6 @@
 		</div>
 		<div id="div_loggedout">
 			<span name="loggedout_username"></span>
-		</div>
-		<div id="div_members">
 		</div>
 		<script>
 			var webPath = "ws://" + window.location.host + "/message_test/";
@@ -57,10 +61,10 @@
 					var userInfo = JSON.parse(input.context);
 					makeUserInfo(userInfo);
 					sendUserInfo(userInfo);
-				} else if (input.code == 'info member') {
+				} else if (input.code == 'info message') {
 					console.log(JSON.parse(input.context));
-					var memberInfo = JSON.parse(input.context);
-					makeMemberInfo(memberInfo);
+					var messageInfo = JSON.parse(input.context);
+					makeSlipMessage(messageInfo);
 				} else if (input.code == 'msg') {
 					if (input.receiver) {
 						makeMessage(input);
@@ -192,32 +196,89 @@
 			}
 
 			function makeMessage(message) {
-				for (var i in chattingRoomWindow) {
-					chattingRoomWindow[i]['roomWindow'].receiveMessage(message);
+				var this_one = document.getElementById("login_join_member"+'{{ request.user.id}}');
+				if (this_one.innerHTML) {
+					for (var i in chattingRoomWindow) {
+						chattingRoomWindow[i]['roomWindow'].receiveMessage(message);
+					}
+				} else{
+					if (message['receiver'] == '{{ request.user }}') {
+						alert(message['sender'] + ": " + message['context']);
+					}
 				}
+
 			}
 
-			function logoutFunc() {
+			function logoutFunc() {			
+				for (var i in chattingRoomWindow) {
+					chattingRoomWindow[i]['roomWindow'].close();
+				}
+
 				websocket.send(JSON.stringify({
 					"code": "noti",
 					"sender": '{{ request.user }}',
 					"context": "logout",
 				}));
+
 			}
 
 			function sendUserInfo(userInfo) {
-				console.log("SEND");
 				for (var i in chattingRoomWindow) {
 					chattingRoomWindow[i]['roomWindow'].receiveUserInfo(userInfo);
 				}
 			}
-			
-			function makeMemberInfo(memberInfo) {
-				console.log(memberInfo)
-				var divMembers = document.getElementById("div_members");
-				divMembers.innerHTML += memberInfo['room_id'] + ": " + memberInfo['member_username'] + memberInfo['is_loggedin'] +"<br>";
+
+			function makeSlipMessage(messageInfo) {
+				var slipMessageList = document.getElementById("slip_message_list");
+				var newOne = slipMessageList.cloneNode(true);
+				var messageId = messageInfo['id'];
+
+				if ('{{ request.user }}' == messageInfo['receiver']) {
+					var existMessage = document.getElementById("msg" + messageId);
+					if (!existMessage) {		
+						for (var attribute in messageInfo) {
+							var spanSender = document.getElementsByName("message_sender")[0];
+							var spanContext = document.getElementsByName("message_context")[0];
+							var spanSendTime = document.getElementsByName("message_send_time")[0];
+							var spanButton = document.getElementsByName("message_button")[0];
+							
+							if (attribute == 'sender') {
+								spanSender.setAttribute("id", attribute+messageId);
+								spanSender.setAttribute("name", attribute+messageId);
+								spanSender.innerHTML = messageInfo[attribute] + " : ";
+							} else if (attribute == 'context') {
+								spanContext.setAttribute("id", attribute+messageId);
+								spanContext.setAttribute("name", attribute+messageId);
+								spanContext.innerHTML = messageInfo[attribute] + " ";
+							} else if (attribute == 'send_time') {							
+								spanSendTime.setAttribute("id", attribute+messageId);
+								spanSendTime.setAttribute("name", attribute+messageId);
+								spanSendTime.innerHTML = messageInfo[attribute] + " ";
+							}
+						}
+
+						spanButton.innerHTML = "<button name='btn_check' id=btn"+messageId+" onclick='sendCheckMessage("+messageId+")'>CHECK</button>";
+						spanButton.setAttribute("id", "msg_button"+messageId);
+						spanButton.setAttribute("name", "msg_button"+messageId);
+
+						$('#slip_message_list').after(newOne);
+						slipMessageList.setAttribute("id", "msg" + messageId);
+						slipMessageList.setAttribute("name", "msg" + messageId);
+					}
+				}
 			}
 
+			function sendCheckMessage(messageId) {
+				var pSlipMessage = document.getElementById("msg"+messageId);
+				document.getElementsByClassName("container")[0].removeChild(pSlipMessage);
+				websocket.send(JSON.stringify({
+					"code": "noti",
+					"sender": '{{ request.user }}',
+					"context": "read message",
+					"messageId": messageId,
+				}));
+			}
+			
 			function makeUserInfo(userInfo) {
 				var divLoginList = document.getElementById("div_loggedin");
 				var newOneLogin = divLoginList.cloneNode(true);
@@ -227,7 +288,8 @@
 				var userId = userInfo['id'];
 				var existLoginUser = document.getElementById("login"+userId);
 				var existLogoutUser = document.getElementById("logout"+userId);
-				if (existLoginUser || existLogoutUser) {					
+				
+				if (existLoginUser || existLogoutUser) {				
 					if (existLogoutUser && userInfo['is_loggedin'] == true) {
 						document.getElementsByClassName("container")[0].removeChild(existLogoutUser);
 						for (var attribute in userInfo) {
@@ -238,17 +300,20 @@
 								spanUserName.setAttribute("id", "login_"+attribute+userId);
 								spanUserName.setAttribute("name", "login_"+attribute+userId);
 								spanUserName.innerHTML = userInfo[attribute] + " <span style='color:green;'>O</span><br>";
+							} else if (attribute == 'join_member') {
+								spanRoomInfo.setAttribute("id", "login_"+attribute+userId);
+								spanRoomInfo.setAttribute("name", "login_"+attribute+userId);
+								for (let i = 0; i < userInfo['join_member'].length; i++) {
+									var joinRoomInfo = JSON.parse(userInfo[attribute][i]);
+									spanRoomInfo.innerHTML += joinRoomInfo.room_name+"("+joinRoomInfo.room_id+")";
+								}
 							}
-							spanRoomInfo.setAttribute("id", "login_roominfo"+userId);
-							spanRoomInfo.setAttribute("name", "login_roominfo"+userId);
-
 						}
 					
 						$('#div_loggedin').after(newOneLogin);
 						divLoginList.setAttribute("id", "login"+userId);
 						divLoginList.setAttribute("name", "login"+userId);
-					}
-					else if(existLoginUser && userInfo['is_loggedin'] == false){
+					} else if(existLoginUser && userInfo['is_loggedin'] == false){
 						document.getElementsByClassName("container")[0].removeChild(existLoginUser);
 						for (var attribute in userInfo) {
 							var spanUserName = document.getElementsByName("loggedout_username")[0];
@@ -257,12 +322,23 @@
 								spanUserName.setAttribute("id", "logout_"+attribute+userId);
 								spanUserName.setAttribute("name", "logout_"+attribute+userId);
 								spanUserName.innerHTML = userInfo[attribute] + " <span style='color:grey;'>O</span><br>";
-							} 
+							}
 						}
 					
 						$('#div_loggedout').after(newOneLogout);
 						divLogoutList.setAttribute("id", "logout"+userId);
 						divLogoutList.setAttribute("name", "logout"+userId);
+					} else if (existLoginUser && userInfo['is_loggedin'] == true) {
+						for (var attribute in userInfo) {
+							var spanRoomInfo = document.getElementById("login_"+attribute+userId);
+							if (attribute == 'join_member') {
+								spanRoomInfo.innerHTML = ""
+								for (let i = 0; i < userInfo['join_member'].length; i++) {
+									var joinRoomInfo = JSON.parse(userInfo[attribute][i]);
+									spanRoomInfo.innerHTML += joinRoomInfo.room_name+"("+joinRoomInfo.room_id+")";
+								}
+							}
+						}
 					}
 				
 				} else {
@@ -275,7 +351,14 @@
 								spanUserName.setAttribute("id", "login_"+attribute+userId);
 								spanUserName.setAttribute("name", "login_"+attribute+userId);
 								spanUserName.innerHTML = userInfo[attribute] + " <span style='color:green;'>O</span><br>";
-							} 
+							} else if (attribute == 'join_member') {
+								spanRoomInfo.setAttribute("id", "login_"+attribute+userId);
+								spanRoomInfo.setAttribute("name", "login_"+attribute+userId);
+								for (let i = 0; i < userInfo['join_member'].length; i++) {
+									var joinRoomInfo = JSON.parse(userInfo[attribute][i]);
+									spanRoomInfo.innerHTML += joinRoomInfo.room_name+"("+joinRoomInfo.room_id+")";
+								}
+							}
 						}
 					
 						$('#div_loggedin').after(newOneLogin);
@@ -290,7 +373,7 @@
 								spanUserName.setAttribute("id", "logout_"+attribute+userId);
 								spanUserName.setAttribute("name", "logout_"+attribute+userId);
 								spanUserName.innerHTML = userInfo[attribute] + " <span style='color:grey;'>O</span><br>";
-							} 
+							}
 						}
 					
 						$('#div_loggedout').after(newOneLogout);
